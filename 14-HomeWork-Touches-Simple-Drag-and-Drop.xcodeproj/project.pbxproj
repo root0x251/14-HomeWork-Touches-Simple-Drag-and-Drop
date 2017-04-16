@@ -509,6 +509,7 @@
 				F995C22F1EA0B193001D3617 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		F995C2301EA0B193001D3617 /* Build configuration list for PBXNativeTarget "14-HomeWork-Touches-Simple-Drag-and-DropTests" */ = {
 			isa = XCConfigurationList;
@@ -517,6 +518,7 @@
 				F995C2321EA0B193001D3617 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		F995C2331EA0B193001D3617 /* Build configuration list for PBXNativeTarget "14-HomeWork-Touches-Simple-Drag-and-DropUITests" */ = {
 			isa = XCConfigurationList;
@@ -525,6 +527,7 @@
 				F995C2351EA0B193001D3617 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
