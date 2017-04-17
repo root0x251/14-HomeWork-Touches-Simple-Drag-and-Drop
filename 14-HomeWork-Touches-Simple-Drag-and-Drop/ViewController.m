@@ -10,86 +10,79 @@
 
 @interface ViewController ()
 
+@property (strong, nonatomic) UIView *field;
+@property (strong, nonatomic) UIView *smallBlackRect;
+@property (strong, nonatomic) NSMutableArray *arrayWithSmallBlackRect;
+@property (strong, nonatomic) NSMutableArray *arrayWithBlackCess;
+@property (strong, nonatomic) NSMutableArray *arrayWithWhiteCess;
+
+
 @end
 
 @implementation ViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // создаем большое поле
-    UIView *bigBlackRect = [UIView new];                                        // создаем черный квадрат
-    CGFloat widthBigBlackRect = CGRectGetWidth(self.view.bounds) - 10;          // даем ему ширину (с отступом 10 от края экрана (слева/справа)
-    CGFloat x = (CGRectGetWidth(self.view.bounds) - widthBigBlackRect) / 2;     // координата Х от которой отнимается ширина квадрата и все это / на 2 (для центровки)
-    CGFloat y = (CGRectGetHeight(self.view.bounds) - widthBigBlackRect) / 2;    // то же самое что и на строку выше
-    bigBlackRect = [self create:[UIColor blackColor] withX:x withY:y withWidth:widthBigBlackRect withHeight:widthBigBlackRect]; // создаем
-    bigBlackRect.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin |
-                                    UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleTopMargin;   // делаем его изменяемым при повороте экрана
-    [self.view addSubview:bigBlackRect];    // выводим его на экран
+    self.view.backgroundColor = [UIColor colorWithRed:(float)(233 % 256) / 255
+                                                green:(float)(233 % 256) / 255
+                                                 blue:(float)(233 % 256) / 255
+                                                alpha:1];
     
-    
-    // создаем белый квадрат (он же сабвью у черного)
-    UIView *bigWhiteRect = [UIView new];
-    CGFloat widthBigWhiteRect = CGRectGetWidth(bigBlackRect.bounds) - 2;
-    bigWhiteRect = [self create:[UIColor whiteColor] withX:CGRectGetMinX(bigWhiteRect.bounds) + 1
-                                                      withY:CGRectGetMinY(bigWhiteRect.bounds) + 1
-                                                  withWidth:widthBigWhiteRect
-                                                 withHeight:widthBigWhiteRect];
-    bigWhiteRect.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin |
-                                    UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleTopMargin;
-    [bigBlackRect addSubview:bigWhiteRect];
-    
-    // черный маленький квадрат
-    CGFloat sizeSmallBlackRect = CGRectGetWidth(bigWhiteRect.bounds) / 8 - 0.5;      // размер малого квадрата
-    CGRect fieldForBlackRect = CGRectMake(CGRectGetMinX(bigWhiteRect.bounds) + 2,           // его координаты
-                              CGRectGetMinY(bigWhiteRect.bounds) + 2,
-                              sizeSmallBlackRect,
-                              sizeSmallBlackRect);
-    // белый маленький квадрат
-    CGFloat sizeSmallWhiteRect = CGRectGetWidth(bigWhiteRect.bounds) / 8 - 0.5;      // размер малого квадрата
-    CGRect fieldForWhiteRect = CGRectMake(CGRectGetMinX(bigWhiteRect.bounds) + 2 + sizeSmallWhiteRect,           // его координаты
-                                          CGRectGetMinY(bigWhiteRect.bounds) + 2,
-                                          sizeSmallWhiteRect,
-                                          sizeSmallWhiteRect);
+    [self createBoard];
+    [self createField];
+    [self createAndSetChass];
+}
 
-    for (int i = 0; i < 8; i++) {                                                           // черные и "белые" (пропуски) квадраты
-        for (int j = 0; j < 4; j++) {                                                       // спускаемся на шаг ниже
-            // создаем поле из черных квадратов
-            UIView *createBlacView = [[UIView alloc] initWithFrame:fieldForBlackRect];      // создаем квадрат
-            createBlacView.backgroundColor = [UIColor blackColor];                          // цвет
-            fieldForBlackRect.origin.x += sizeSmallBlackRect * 2;                           // идем по X
-            [bigWhiteRect addSubview:createBlacView];                                       // добавляем его в subview
-            // создаем шашки
-            UIImageView *whiteChess = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
-            UIImage *whiteChassImg = [UIImage imageNamed:@"whiteChess.png"];
-            whiteChess.image = whiteChassImg;
-            [createBlacView addSubview:whiteChess];
-            
-            // создаем поле из белых квадратов
-            UIView *createWhiteView = [[UIView alloc] initWithFrame:fieldForWhiteRect];
-            createWhiteView.backgroundColor = [UIColor whiteColor];
-            fieldForWhiteRect.origin.x += sizeSmallWhiteRect * 2;
-            [bigWhiteRect addSubview:createWhiteView];
+
+#pragma mark - Create board
+- (void) createBoard {
+    CGFloat widthAndHeight = CGRectGetWidth(self.view.bounds);
+    CGFloat x = (CGRectGetWidth(self.view.bounds) - widthAndHeight) / 2;
+    CGFloat y = (CGRectGetHeight(self.view.bounds) - widthAndHeight) / 2;
+    CGRect fieldRect = CGRectMake(x, y, widthAndHeight, widthAndHeight);
+    self.field = [[UIView alloc]initWithFrame:fieldRect];
+    self.field.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin |
+                                UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleTopMargin;
+    [self.view addSubview:self.field];
+}
+
+#pragma mark - Create field (black Rect)
+- (void) createField {
+    self.arrayWithSmallBlackRect = [NSMutableArray new];
+    CGFloat widthAngHeight = CGRectGetWidth(self.field.bounds) / 8;
+    CGFloat x = CGRectGetMinX(self.field.bounds);
+    CGFloat y = CGRectGetMinY(self.field.bounds);
+    CGRect blackRect = CGRectMake(x, y, widthAngHeight, widthAngHeight);
+
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 4; j++) {
+            self.smallBlackRect = [[UIView alloc]initWithFrame:blackRect];
+            self.smallBlackRect.backgroundColor = [UIColor blackColor];
+            blackRect.origin.x += widthAngHeight * 2;
+            [self.field addSubview:self.smallBlackRect];
+            [self.arrayWithSmallBlackRect addObject:self.smallBlackRect];
         }
         if (i % 2) {                                                                        // если i четное
-            fieldForBlackRect.origin.x = CGRectGetMinX(bigWhiteRect.bounds) + 2;            // добавляем квадрат с отступом (квадрата)
+            blackRect.origin.x = CGRectGetMinX(self.field.bounds);            // добавляем квадрат с отступом (квадрата)
         } else {
-            fieldForBlackRect.origin.x = sizeSmallBlackRect + 2;                                 //что и сверху но по У
+            blackRect.origin.x = widthAngHeight;                                 //что и сверху но по У
         }
-        fieldForBlackRect.origin.y += sizeSmallBlackRect;                                        //добавляем расстойние в два квадрата по У
-        // делаем второй цикл для заполнением whiteRectView
-        if (i % 2 == FALSE) {
-            fieldForWhiteRect.origin.x = CGRectGetMinX(bigWhiteRect.bounds) + 2;
-        } else {
-            fieldForWhiteRect.origin.x = sizeSmallWhiteRect + 2;
-        }
-        fieldForWhiteRect.origin.y += sizeSmallWhiteRect;
+        blackRect.origin.y += widthAngHeight;
     }
+    
+    
 }
-- (UIView *) create:(UIColor *)color withX:(CGFloat) x withY:(CGFloat) y withWidth:(CGFloat) width withHeight:(CGFloat) height {
-    CGRect rect = CGRectMake(x, y, width, height);
-    UIView *createRect = [[UIView alloc] initWithFrame:rect];
-    createRect.backgroundColor = color;
-    return createRect;
+
+#pragma mark - Create an set chass {
+- (void) createAndSetChass {
+    UIImageView *blackChess = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
+    UIImage *blackChessImg = [UIImage imageNamed:@"blackChess.png"];
+    blackChess.image = blackChessImg;
+            [self.smallBlackRect addSubview:blackChess];
+    
+    UIImageView *whiteChess = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
+    UIImage *whiteChessImg = [UIImage imageNamed:@"whiteChess.png"];
+    whiteChess.image = whiteChessImg;
 }
 
 
