@@ -10,12 +10,11 @@
 
 @interface ViewController ()
 
-@property (strong, nonatomic) UIView *field;
-@property (strong, nonatomic) UIView *smallBlackRect;
-@property (strong, nonatomic) NSMutableArray *arrayWithSmallBlackRect;
-@property (strong, nonatomic) NSMutableArray *arrayWithBlackCess;
-@property (strong, nonatomic) NSMutableArray *arrayWithWhiteCess;
-
+@property (weak, nonatomic) UIView* draggingView;
+@property (assign, nonatomic) CGPoint touchOffset;
+@property (strong, nonatomic) NSMutableArray* arrayChecker;
+@property (strong, nonatomic) NSMutableArray* arrayBlackCells;
+@property (strong, nonatomic) NSMutableArray* arrayFreeCells;
 
 @end
 
@@ -23,82 +22,182 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor colorWithRed:(float)(233 % 256) / 255
-                                                green:(float)(233 % 256) / 255
-                                                 blue:(float)(233 % 256) / 255
-                                                alpha:1];
+    // Do any additional setup after loading the view, typically from a nib.
     
-    [self createBoard];
-    [self createField];
-    [self createAndSetChass];
+    self.arrayChecker = [[NSMutableArray alloc]init];
+    self.arrayBlackCells = [[NSMutableArray alloc]init];
+    self.arrayFreeCells =[[NSMutableArray alloc]init];
+    
+    
+    
+    for (int x=0; x<8; x++) {
+        for (int y =0; y<8; y++) {
+            UIView* view = [[UIView alloc] initWithFrame:CGRectMake(x*50, y*50+20, 50, 50)];
+            
+            view.layer.borderWidth = 0.9f;
+            view.layer.borderColor = [UIColor grayColor].CGColor;
+            view.backgroundColor = ((x+y) %2) == 0 ? [UIColor whiteColor] : [UIColor blackColor];
+            if ([view.backgroundColor isEqual:[UIColor blackColor]]) {
+                [self.arrayBlackCells addObject:view];
+                if (y==3 | y== 4) {
+                    [self.arrayFreeCells addObject:[NSValue valueWithCGPoint:view.center]];
+                }
+                
+            }
+            if ([view.backgroundColor isEqual:[UIColor blackColor]] && y!=3 && y!=4) {
+                UIView* viewCheck = [[UIView alloc] initWithFrame:CGRectMake(view.frame.origin.x+5,view.frame.origin.y+5,40,40)];
+                
+                viewCheck.tag = 2;
+                viewCheck.layer.borderWidth = 2.9f;
+                viewCheck.layer.borderColor = [UIColor grayColor].CGColor;
+                viewCheck.layer.cornerRadius = 20;
+                if (y<3) {
+                    viewCheck.backgroundColor = [UIColor redColor];
+                }
+                if (y>4) {
+                    viewCheck.backgroundColor = [UIColor whiteColor];
+                }
+                
+                
+                [self.arrayChecker addObject:viewCheck];
+                [self.view addSubview:viewCheck];
+                
+            }
+            
+            [self.view addSubview:view];
+            [self.view sendSubviewToBack:view];
+        }
+    }
+    
+    //self.view.multipleTouchEnabled = YES;
+}
+
+#pragma mark - Private Methods
+
+- (void) logTouches:(NSSet<UITouch *> *)touches withMethod:(NSString *) methodName {
+    
+    NSMutableString* string = [NSMutableString stringWithString:methodName];
+    
+    for (UITouch* touch in touches) {
+        CGPoint point = [touch locationInView:self.view];
+        [string appendFormat:@" %@", NSStringFromCGPoint(point)];
+    }
+    NSLog(@"%@", string);
+}
+
+- (void) ontouchesEnded {
+    [UIView animateWithDuration:0.3 animations:^{
+        self.draggingView.transform = CGAffineTransformIdentity;
+        self.draggingView.alpha = 1.f;
+    }];
+    self.draggingView = nil;
+}
+
+- (CGFloat) getDistanceBetween: (CGPoint) first and: (CGPoint) second
+{
+    CGFloat x = (second.x - first.x);
+    CGFloat y = (second.y - first.y);
+    
+    return sqrt((x*x) + (y*y));
+    
 }
 
 
-#pragma mark - Create board
-- (void) createBoard {
-    CGFloat widthAndHeight = CGRectGetWidth(self.view.bounds);
-    CGFloat x = (CGRectGetWidth(self.view.bounds) - widthAndHeight) / 2;
-    CGFloat y = (CGRectGetHeight(self.view.bounds) - widthAndHeight) / 2;
-    CGRect fieldRect = CGRectMake(x, y, widthAndHeight, widthAndHeight);
-    self.field = [[UIView alloc]initWithFrame:fieldRect];
-    self.field.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin |
-                                UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleTopMargin;
-    [self.view addSubview:self.field];
+#pragma mark - Touches
+
+- (void) touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    
+    [self logTouches:touches withMethod:@"touchesBegan"];
+    
+    UITouch* touch = [touches anyObject];
+    
+    CGPoint pointOnMainView = [touch locationInView:self.view];
+    
+    UIView* view = [self.view hitTest:pointOnMainView withEvent:event];
+    
+    if (view.tag == 2) {
+        self.draggingView = view;
+        [self.view bringSubviewToFront:self.draggingView];
+        CGPoint touchPoint = [touch locationInView:self.draggingView];
+        self.touchOffset = CGPointMake(CGRectGetMidX(self.draggingView.bounds) - touchPoint.x, CGRectGetMidY(self.draggingView.bounds) - touchPoint.y);
+        [UIView animateWithDuration:0.3 animations:^{
+            self.draggingView.transform = CGAffineTransformMakeScale(1.3f, 1.3f);
+            self.draggingView.alpha = 0.5f;
+        }];
+    } else {
+        self.draggingView = nil;
+    }
+    [self.arrayFreeCells addObject:[NSValue valueWithCGPoint:self.draggingView.center]];
+    
 }
 
-#pragma mark - Create field (black Rect)
-- (void) createField {
-    self.arrayWithSmallBlackRect = [NSMutableArray new];
-    CGFloat widthAngHeight = CGRectGetWidth(self.field.bounds) / 8;
-    CGFloat x = CGRectGetMinX(self.field.bounds);
-    CGFloat y = CGRectGetMinY(self.field.bounds);
-    CGRect blackRect = CGRectMake(x, y, widthAngHeight, widthAngHeight);
-
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 4; j++) {
-            self.smallBlackRect = [[UIView alloc]initWithFrame:blackRect];
-            self.smallBlackRect.backgroundColor = [UIColor blackColor];
-            blackRect.origin.x += widthAngHeight * 2;
-            [self.field addSubview:self.smallBlackRect];
-            [self.arrayWithSmallBlackRect addObject:self.smallBlackRect];
-        }
-        if (i % 2) {                                                                        // если i четное
-            blackRect.origin.x = CGRectGetMinX(self.field.bounds);            // добавляем квадрат с отступом (квадрата)
-        } else {
-            blackRect.origin.x = widthAngHeight;                                 //что и сверху но по У
-        }
-        blackRect.origin.y += widthAngHeight;
+- (void) touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    
+    [self logTouches:touches withMethod:@"touchesMoved"];
+    
+    if (self.draggingView) {
+        UITouch* touch = [touches anyObject];
+        CGPoint pointOnMainView = [touch locationInView:self.view];
+        CGPoint correction = CGPointMake(pointOnMainView.x + self.touchOffset.x, pointOnMainView.y+self.touchOffset.y);
+        self.draggingView.center = correction;
+        
     }
     
     
 }
 
-#pragma mark - Create an set chass {
-- (void) createAndSetChass {
-    UIImageView *blackChess = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
-    UIImage *blackChessImg = [UIImage imageNamed:@"blackChess.png"];
-    blackChess.image = blackChessImg;
-            [self.smallBlackRect addSubview:blackChess];
+- (void) touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     
-    UIImageView *whiteChess = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 50, 50)];
-    UIImage *whiteChessImg = [UIImage imageNamed:@"whiteChess.png"];
-    whiteChess.image = whiteChessImg;
+    [self logTouches:touches withMethod:@"touchesEnded"];
+    //CGPoint correction ;
+    if (self.draggingView) {
+        UITouch* touch = [touches anyObject];
+        CGPoint pointOnBoard = [touch locationInView:self.view];
+        
+        CGFloat minDistance = MAXFLOAT;
+        CGPoint cellWithMinDistance = CGPointZero;
+        
+        
+        for (NSValue* cells in self.arrayFreeCells) {
+            
+            
+            CGPoint cellPoint = [cells CGPointValue];
+            
+            
+            CGFloat getCellWithMinDistance = [self getDistanceBetween:cellPoint and:pointOnBoard];
+            
+            if (getCellWithMinDistance < minDistance)
+            {
+                minDistance = getCellWithMinDistance;
+                cellWithMinDistance = cellPoint;
+            }
+            
+            CGPoint correction = CGPointMake(cellWithMinDistance.x, cellWithMinDistance.y);
+            self.draggingView.center = correction;
+            
+        }
+        
+        
+    }
+    
+    
+    [self.arrayFreeCells removeObject:[NSValue valueWithCGPoint:self.draggingView.center]];
+    [self ontouchesEnded];
+    
+    
 }
 
+
+- (void) touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    
+    [self logTouches:touches withMethod:@"touchesCancelled"];
+    [self ontouchesEnded];
+    
+}
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
-
-
-//1. Создайте шахматное поле (8х8), используйте черные сабвьюхи
-//2. Добавьте балые и красные шашки на черные клетки (используйте начальное расположение в шашках)
-//3. Реализуйте механизм драг'н'дроп подобно тому, что я сделал в примере, но с условиями:
-//4. Шашки должны ставать в центр черных клеток.
-//5. Даже если я отпустил шашку над центром белой клетки - она должна переместиться в центр ближайшей к отпусканию черной клетки.
-//6. Шашки не могут становиться друг на друга
-//7. Шашки не могут быть поставлены за пределы поля.
-
 
 @end
